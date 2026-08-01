@@ -14,7 +14,7 @@ inputs:
   body:
     description: 'Release body text. Defaults to a standard pm-version line.'
     required: false
-    default: 'For PocketMine-MP ${{ inputs.pm-version }}'
+    default: ''
 
 # No checkout needed — everything goes through the GitHub API.
 # Prerequisite: permissions: contents: write on the calling job.
@@ -30,6 +30,19 @@ runs:
           && echo "IS_PRERELEASE=true"  >> $GITHUB_OUTPUT \
           || echo "IS_PRERELEASE=false" >> $GITHUB_OUTPUT
 
+    - name: 'Resolve body'
+      id: 'resolve-body'
+      shell: 'bash'
+      run: |
+        BODY='${{ inputs.body }}'
+        if [ -z "$BODY" ]; then
+          BODY='For PocketMine-MP ${{ inputs.pm-version }}'
+        fi
+        # Use a delimiter to safely handle multiline content
+        echo "BODY<<EOF_BODY" >> $GITHUB_OUTPUT
+        echo "$BODY"          >> $GITHUB_OUTPUT
+        echo "EOF_BODY"       >> $GITHUB_OUTPUT
+
     - name: 'Download phar'
       uses: 'actions/download-artifact@v4'
       with:
@@ -43,5 +56,5 @@ runs:
         name: '${{ inputs.plugin-name }} ${{ github.ref_name }}'
         prerelease: '${{ steps.flags.outputs.IS_PRERELEASE }}'
         generate_release_notes: true
-        body: '${{ inputs.body }}'
+        body: '${{ steps.resolve-body.outputs.BODY }}'
         files: '${{ runner.temp }}/${{ inputs.plugin-name }}.phar'

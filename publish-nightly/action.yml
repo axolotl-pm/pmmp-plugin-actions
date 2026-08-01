@@ -25,11 +25,7 @@ inputs:
   body:
     description: 'Release body text. Defaults to a standard nightly summary with commit SHA, timestamp and dev warning.'
     required: false
-    default: |
-      For PocketMine-MP ${{ inputs.pm-version }}
-      From commit: ${{ inputs.sha }}
-      Generated on: ${{ inputs.timestamp }}
-      ⚠️ This is a development build. Not recommended for production use.
+    default: ''
 
 # Prerequisites:
 #   - actions/checkout must run before this action in the same job
@@ -39,6 +35,21 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: 'Resolve body'
+      id: 'resolve-body'
+      shell: 'bash'
+      run: |
+        BODY='${{ inputs.body }}'
+        if [ -z "$BODY" ]; then
+          BODY="For PocketMine-MP ${{ inputs.pm-version }}
+From commit: ${{ inputs.sha }}
+Generated on: ${{ inputs.timestamp }}
+⚠️ This is a development build. Not recommended for production use."
+        fi
+        echo "BODY<<EOF_BODY" >> $GITHUB_OUTPUT
+        echo "$BODY"          >> $GITHUB_OUTPUT
+        echo "EOF_BODY"       >> $GITHUB_OUTPUT
+
     - name: 'Download phar'
       uses: 'actions/download-artifact@v4'
       with:
@@ -58,5 +69,5 @@ runs:
         tag_name: 'nightly'
         name: 'Nightly Build ${{ inputs.plugin-version }}'
         prerelease: true
-        body: '${{ inputs.body }}'
+        body: '${{ steps.resolve-body.outputs.BODY }}'
         files: '${{ runner.temp }}/${{ inputs.plugin-name }}.phar'
