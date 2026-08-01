@@ -38,16 +38,20 @@ runs:
     - name: 'Resolve body'
       id: 'resolve-body'
       shell: 'bash'
+      env:
+        INPUT_BODY:       '${{ inputs.body }}'
+        INPUT_PM_VERSION: '${{ inputs.pm-version }}'
+        INPUT_SHA:        '${{ inputs.sha }}'
+        INPUT_TIMESTAMP:  '${{ inputs.timestamp }}'
       run: |
-        BODY='${{ inputs.body }}'
-        if [ -z "$BODY" ]; then
-          BODY="For PocketMine-MP ${{ inputs.pm-version }}
-From commit: ${{ inputs.sha }}
-Generated on: ${{ inputs.timestamp }}
-⚠️ This is a development build. Not recommended for production use."
+        if [ -z "$INPUT_BODY" ]; then
+          INPUT_BODY="For PocketMine-MP $INPUT_PM_VERSION"$'\n'
+          INPUT_BODY+="From commit: $INPUT_SHA"$'\n'
+          INPUT_BODY+="Generated on: $INPUT_TIMESTAMP"$'\n'
+          INPUT_BODY+="⚠️ This is a development build. Not recommended for production use."
         fi
         echo "BODY<<EOF_BODY" >> $GITHUB_OUTPUT
-        echo "$BODY"          >> $GITHUB_OUTPUT
+        echo "$INPUT_BODY"    >> $GITHUB_OUTPUT
         echo "EOF_BODY"       >> $GITHUB_OUTPUT
 
     - name: 'Download phar'
@@ -58,10 +62,12 @@ Generated on: ${{ inputs.timestamp }}
 
     - name: 'Update the nightly tag'
       shell: 'bash'
+      env:
+        INPUT_SHA: '${{ inputs.sha }}'
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git tag --force nightly '${{ inputs.sha }}' && git push --force origin tag nightly
+        git tag --force nightly "$INPUT_SHA" && git push --force origin tag nightly
 
     - name: 'Publish nightly release'
       uses: 'softprops/action-gh-release@v3'

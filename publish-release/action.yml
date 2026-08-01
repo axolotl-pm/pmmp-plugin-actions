@@ -33,14 +33,15 @@ runs:
     - name: 'Resolve body'
       id: 'resolve-body'
       shell: 'bash'
+      env:
+        INPUT_BODY:       '${{ inputs.body }}'
+        INPUT_PM_VERSION: '${{ inputs.pm-version }}'
       run: |
-        BODY='${{ inputs.body }}'
-        if [ -z "$BODY" ]; then
-          BODY='For PocketMine-MP ${{ inputs.pm-version }}'
+        if [ -z "$INPUT_BODY" ]; then
+          INPUT_BODY="For PocketMine-MP $INPUT_PM_VERSION"
         fi
-        # Use a delimiter to safely handle multiline content
         echo "BODY<<EOF_BODY" >> $GITHUB_OUTPUT
-        echo "$BODY"          >> $GITHUB_OUTPUT
+        echo "$INPUT_BODY"    >> $GITHUB_OUTPUT
         echo "EOF_BODY"       >> $GITHUB_OUTPUT
 
     - name: 'Download phar'
