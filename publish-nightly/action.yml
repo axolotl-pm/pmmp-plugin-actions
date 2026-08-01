@@ -1,0 +1,62 @@
+name: 'Publish Nightly'
+description: 'Force-push the nightly tag to the current commit and publish a pre-release with the plugin phar.'
+
+inputs:
+  artifact-name:
+    description: 'Name of the artifact to download (from build-phar outputs)'
+    required: true
+  plugin-name:
+    description: 'Plugin name (from build-phar outputs)'
+    required: true
+  plugin-version:
+    description: 'Plugin version (from build-phar outputs)'
+    required: true
+  pm-version:
+    description: 'PocketMine-MP API version string (from build-phar outputs)'
+    required: true
+  sha:
+    description: 'Commit SHA to tag as nightly'
+    required: false
+    default: '${{ github.sha }}'
+  timestamp:
+    description: 'Build timestamp for the release body'
+    required: false
+    default: '${{ github.event.head_commit.timestamp }}'
+  body:
+    description: 'Release body text. Defaults to a standard nightly summary with commit SHA, timestamp and dev warning.'
+    required: false
+    default: |
+      For PocketMine-MP ${{ inputs.pm-version }}
+      From commit: ${{ inputs.sha }}
+      Generated on: ${{ inputs.timestamp }}
+      ⚠️ This is a development build. Not recommended for production use.
+
+# Prerequisites:
+#   - actions/checkout must run before this action in the same job
+#     (needed for the git tag + push step).
+#   - permissions: contents: write on the calling job.
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Download phar'
+      uses: 'actions/download-artifact@v4'
+      with:
+        name: '${{ inputs.artifact-name }}'
+        path: '${{ runner.temp }}'
+
+    - name: 'Update the nightly tag'
+      shell: 'bash'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag --force nightly '${{ inputs.sha }}' && git push --force origin tag nightly
+
+    - name: 'Publish nightly release'
+      uses: 'softprops/action-gh-release@v3'
+      with:
+        tag_name: 'nightly'
+        name: 'Nightly Build ${{ inputs.plugin-version }}'
+        prerelease: true
+        body: '${{ inputs.body }}'
+        files: '${{ runner.temp }}/${{ inputs.plugin-name }}.phar'

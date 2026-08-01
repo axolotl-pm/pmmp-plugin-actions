@@ -1,0 +1,23 @@
+name: 'Validate Release'
+description: 'Verify that the pushed tag matches the version declared in plugin.yml. Fails the job if they differ.'
+
+# No inputs — reads GITHUB_REF_NAME from the runner environment.
+# No outputs — this action's only contract is pass/fail.
+#
+# Prerequisite: actions/checkout must run before this action in the same job.
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Validate tag matches plugin.yml version'
+      shell: 'bash'
+      run: |
+        TAG_CORE="${GITHUB_REF_NAME#v}"   # strip leading 'v'
+        TAG_CORE="${TAG_CORE%%-*}"         # strip pre-release suffix
+        PLUGIN_VER=$(yq '.version' plugin.yml)
+        if [ "$TAG_CORE" != "$PLUGIN_VER" ]; then
+          echo "❌ Tag $GITHUB_REF_NAME does not match plugin.yml version ($PLUGIN_VER)"
+          echo "   Update plugin.yml before tagging."
+          exit 1
+        fi
+        echo "✅ Tag matches plugin.yml version ($PLUGIN_VER)"

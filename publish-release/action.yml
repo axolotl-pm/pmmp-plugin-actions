@@ -1,0 +1,47 @@
+name: 'Publish Release'
+description: 'Download the plugin phar artifact and publish a GitHub release. Detects pre-releases automatically from the tag name.'
+
+inputs:
+  artifact-name:
+    description: 'Name of the artifact to download (from build-phar outputs)'
+    required: true
+  plugin-name:
+    description: 'Plugin name (from build-phar outputs)'
+    required: true
+  pm-version:
+    description: 'PocketMine-MP API version string (from build-phar outputs)'
+    required: true
+  body:
+    description: 'Release body text. Defaults to a standard pm-version line.'
+    required: false
+    default: 'For PocketMine-MP ${{ inputs.pm-version }}'
+
+# No checkout needed — everything goes through the GitHub API.
+# Prerequisite: permissions: contents: write on the calling job.
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Detect pre-release'
+      id: 'flags'
+      shell: 'bash'
+      run: |
+        [[ "$GITHUB_REF_NAME" == *"-"* ]] \
+          && echo "IS_PRERELEASE=true"  >> $GITHUB_OUTPUT \
+          || echo "IS_PRERELEASE=false" >> $GITHUB_OUTPUT
+
+    - name: 'Download phar'
+      uses: 'actions/download-artifact@v4'
+      with:
+        name: '${{ inputs.artifact-name }}'
+        path: '${{ runner.temp }}'
+
+    - name: 'Publish release'
+      uses: 'softprops/action-gh-release@v3'
+      with:
+        tag_name: '${{ github.ref_name }}'
+        name: '${{ inputs.plugin-name }} ${{ github.ref_name }}'
+        prerelease: '${{ steps.flags.outputs.IS_PRERELEASE }}'
+        generate_release_notes: true
+        body: '${{ inputs.body }}'
+        files: '${{ runner.temp }}/${{ inputs.plugin-name }}.phar'
