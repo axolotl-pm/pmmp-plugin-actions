@@ -75,10 +75,6 @@ on:
 jobs:
   build:
     runs-on: 'ubuntu-latest'
-    permissions:
-      id-token: write
-      contents: read
-      attestations: write
     outputs:
       plugin-name:    '${{ steps.plugin-info.outputs.PLUGIN_NAME }}'
       plugin-version: '${{ steps.plugin-info.outputs.PLUGIN_VERSION }}'

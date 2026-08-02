@@ -128,9 +128,11 @@ gh attestation verify Plugin.phar ^
 ```
 
 A successful verification confirms:
-- The phar was built from a specific commit in `owner/PluginRepo`
+- The phar was built from some commit in `owner/PluginRepo`
 - The build ran exclusively through `axolotl-pm/pmmp-plugin-actions/.github/workflows/build-phar.yml`
 - The file has not been modified after the build
+
+To additionally pin verification to a specific commit or ref, use `--source-digest` or `--source-ref`.
 
 ---
 
@@ -147,7 +149,7 @@ Set up PHP, build and compress a PocketMine-MP plugin phar, upload it as a workf
 | Name | Required | Default | Description |
 |:-----|:--------:|:--------|:------------|
 | `php-version` | YES | — | Any version available in [`pmmp/PHP-Binaries`](https://github.com/pmmp/PHP-Binaries) (e.g. `8.2`, `8.3`) |
-| `attest` | NO | `false` | Generate a SLSA build provenance attestation for the phar. Requires `id-token: write` and `attestations: write` permissions on the calling job. |
+| `attest` | NO | `false` | Generate a SLSA build provenance attestation for the phar. When `true`, the calling job must grant `id-token: write` and `attestations: write` (see [Permissions](#permissions) below). |
 | `retention-days` | NO | `1` | Days to retain the uploaded artifact |
 | `artifact-name` | NO | `<plugin-name>-phar` | Artifact name override. Useful in matrix builds to avoid collisions. |
 | `plugin-dir` | NO | `${{ github.workspace }}` | Directory containing `plugin.yml` and `composer.json` |
@@ -166,6 +168,20 @@ Set up PHP, build and compress a PocketMine-MP plugin phar, upload it as a workf
 | `pm-version` | PocketMine-MP API version(s) from `plugin.yml` |
 | `artifact-name` | Name of the uploaded artifact |
 | `artifact-id` | ID of the uploaded artifact. Use for immutable download to guarantee the phar has not been tampered with after attestation. |
+
+#### Permissions
+
+This workflow does **not** declare its own `permissions` block — it inherits whatever the calling job grants. This is intentional: it avoids forcing callers to grant sensitive permissions (`id-token: write`, `attestations: write`) when attestation is not requested.
+
+The minimum required permissions on the calling job are:
+
+| Permission | When required |
+|:-----------|:-------------|
+| `contents: read` | Always (needed for `actions/checkout`) |
+| `id-token: write` | Only when `attest: true` |
+| `attestations: write` | Only when `attest: true` |
+
+The [usage examples](#usage) above already reflect the correct permissions for each case.
 
 ---
 
