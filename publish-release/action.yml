@@ -2,8 +2,8 @@ name: 'Publish Release'
 description: 'Download the plugin phar artifact and publish a GitHub release. Detects pre-releases automatically from the tag name.'
 
 inputs:
-  artifact-name:
-    description: 'Name of the artifact to download (from build-phar outputs)'
+  artifact-id:
+    description: 'ID of the artifact to download (from build-phar outputs)'
     required: true
   plugin-name:
     description: 'Plugin name (from build-phar outputs)'
@@ -47,7 +47,7 @@ runs:
     - name: 'Download phar'
       uses: 'actions/download-artifact@v4'
       with:
-        name: '${{ inputs.artifact-name }}'
+        artifact-ids: '${{ inputs.artifact-id }}'
         path: '${{ runner.temp }}'
 
     - name: 'Publish release'

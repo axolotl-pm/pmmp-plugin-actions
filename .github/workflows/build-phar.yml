@@ -1,0 +1,164 @@
+name: 'Build Phar'
+
+on:
+  workflow_call:
+    inputs:
+      php-version:
+        description: 'PHP version to set up'
+        required: true
+        type: string
+      attest:
+        description: 'Whether to generate a SLSA build provenance attestation for the phar'
+        required: false
+        default: 'false'
+        type: string
+      retention-days:
+        description: 'Days to retain the uploaded artifact'
+        required: false
+        default: '1'
+        type: string
+      artifact-name:
+        description: 'Artifact name override. Useful in matrix builds to avoid collisions. Defaults to <plugin-name>-phar.'
+        required: false
+        default: ''
+        type: string
+
+      # pharynx pass-through inputs
+      plugin-dir:
+        description: 'Directory containing plugin.yml and composer.json'
+        required: false
+        default: ''
+        type: string
+      composer:
+        description: 'Whether pharynx should include composer dependencies'
+        required: false
+        default: 'true'
+        type: string
+      composer-version:
+        description: 'Composer version to use'
+        required: false
+        default: '2.5.5'
+        type: string
+      additional-sources:
+        description: 'Additional source directories, colon-separated, absolute or relative to workspace'
+        required: false
+        default: ''
+        type: string
+      additional-assets:
+        description: 'Additional assets to include (one pathspec per line, works like git add)'
+        required: false
+        default: ''
+        type: string
+      stage-poggit:
+        description: 'Whether to stage the build on Poggit CI'
+        required: false
+        default: 'false'
+        type: string
+
+    outputs:
+      plugin-name:
+        description: 'Value of the name field in plugin.yml'
+        value: '${{ jobs.build.outputs.plugin-name }}'
+      plugin-version:
+        description: 'Value of the version field in plugin.yml'
+        value: '${{ jobs.build.outputs.plugin-version }}'
+      pm-version:
+        description: 'PocketMine-MP API version(s) from plugin.yml'
+        value: '${{ jobs.build.outputs.pm-version }}'
+      artifact-name:
+        description: 'Name of the uploaded artifact (use with actions/download-artifact)'
+        value: '${{ jobs.build.outputs.artifact-name }}'
+      artifact-id:
+        description: 'ID of the uploaded artifact for immutable download'
+        value: '${{ jobs.build.outputs.artifact-id }}'
+
+jobs:
+  build:
+    runs-on: 'ubuntu-latest'
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+    outputs:
+      plugin-name:    '${{ steps.plugin-info.outputs.PLUGIN_NAME }}'
+      plugin-version: '${{ steps.plugin-info.outputs.PLUGIN_VERSION }}'
+      pm-version:     '${{ steps.plugin-info.outputs.PM_VERSION }}'
+      artifact-name:  '${{ steps.resolve.outputs.ARTIFACT_NAME }}'
+      artifact-id:    '${{ steps.upload.outputs.artifact-id }}'
+
+    steps:
+      - uses: 'actions/checkout@v4'
+
+      - name: 'Set up PHP'
+        uses: 'pmmp/setup-php-action@3.2.0'
+        with:
+          php-version: '${{ inputs.php-version }}'
+          install-path: './bin'
+
+      - name: 'Get plugin info'
+        id: 'plugin-info'
+        shell: 'bash'
+        run: |
+          PM_VERSION=$(php -r "
+            \$api = yaml_parse_file('plugin.yml')['api'];
+            echo is_array(\$api) ? implode(', ', \$api) : \$api;
+          ")
+          PLUGIN_VERSION=$(php -r "echo yaml_parse_file('plugin.yml')['version'];")
+          PLUGIN_NAME=$(php -r "echo yaml_parse_file('plugin.yml')['name'];")
+          echo "PM_VERSION=$PM_VERSION"         >> $GITHUB_OUTPUT
+          echo "PLUGIN_VERSION=$PLUGIN_VERSION" >> $GITHUB_OUTPUT
+          echo "PLUGIN_NAME=$PLUGIN_NAME"       >> $GITHUB_OUTPUT
+
+      - name: 'Resolve artifact name'
+        id: 'resolve'
+        shell: 'bash'
+        env:
+          INPUT_ARTIFACT_NAME: '${{ inputs.artifact-name }}'
+          PLUGIN_NAME:         '${{ steps.plugin-info.outputs.PLUGIN_NAME }}'
+        run: |
+          if [ -z "$INPUT_ARTIFACT_NAME" ]; then
+            INPUT_ARTIFACT_NAME="$PLUGIN_NAME-phar"
+          fi
+          echo "ARTIFACT_NAME=$INPUT_ARTIFACT_NAME" >> $GITHUB_OUTPUT
+
+      - name: 'Install Composer dependencies'
+        shell: 'bash'
+        run: 'composer install --no-dev --prefer-dist --no-interaction --classmap-authoritative --ignore-platform-reqs'
+
+      - uses: 'SOF3/pharynx@v0.2'
+        id: 'pharynx'
+        with:
+          plugin-dir:         '${{ inputs.plugin-dir }}'
+          composer:           '${{ inputs.composer }}'
+          composer-version:   '${{ inputs.composer-version }}'
+          additional-sources: '${{ inputs.additional-sources }}'
+          additional-assets:  '${{ inputs.additional-assets }}'
+          stage-poggit:       '${{ inputs.stage-poggit }}'
+
+      - name: 'Compress phar'
+        shell: 'bash'
+        run: |
+          php -dphar.readonly=0 -r "
+            \$phar = new Phar('${{ steps.pharynx.outputs.output-phar }}');
+            \$phar->compressFiles(Phar::GZ);
+          "
+
+      - name: 'Rename phar'
+        shell: 'bash'
+        run: |
+          mv '${{ steps.pharynx.outputs.output-phar }}' \
+             "$RUNNER_TEMP/${{ steps.plugin-info.outputs.PLUGIN_NAME }}.phar"
+
+      - name: 'Generate artifact attestation'
+        if: inputs.attest == 'true'
+        uses: 'actions/attest@v4'
+        with:
+          subject-path: '${{ runner.temp }}/${{ steps.plugin-info.outputs.PLUGIN_NAME }}.phar'
+
+      - name: 'Upload phar artifact'
+        id: 'upload'
+        uses: 'actions/upload-artifact@v4'
+        with:
+          name: '${{ steps.resolve.outputs.ARTIFACT_NAME }}'
+          path: '${{ runner.temp }}/${{ steps.plugin-info.outputs.PLUGIN_NAME }}.phar'
+          retention-days: '${{ inputs.retention-days }}'
