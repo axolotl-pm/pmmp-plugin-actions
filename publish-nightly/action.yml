@@ -45,7 +45,8 @@ runs:
         echo "EOF_BODY"       >> $GITHUB_OUTPUT
 
     - name: 'Download phar'
-      uses: 'actions/download-artifact@v4'
+      id: 'download'
+      uses: 'actions/download-artifact@v8'
       with:
         artifact-ids: '${{ inputs.artifact-id }}'
         path: '${{ runner.temp }}'
@@ -64,4 +65,4 @@ runs:
         name: 'Nightly Build ${{ inputs.plugin-version }}'
         prerelease: true
         body: '${{ steps.resolve-body.outputs.BODY }}'
-        files: '${{ runner.temp }}/${{ inputs.plugin-name }}.phar'
+        files: '${{ steps.download.outputs.download-path }}/${{ inputs.plugin-name }}.phar'
