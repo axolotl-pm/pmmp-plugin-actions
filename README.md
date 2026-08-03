@@ -37,7 +37,7 @@ jobs:
       php-version: '8.2'
       stage-poggit: true
     permissions:
-      contents: read
+      contents: write  # Required when `stage-poggit: true`; otherwise, use read
 
   publish:
     needs: build
@@ -176,11 +176,12 @@ This workflow does **not** declare its own `permissions` block — it inherits w
 
 The minimum required permissions on the calling job are:
 
-| Permission | When required |
-|:-----------|:-------------|
-| `contents: read` | Always (needed for `actions/checkout`) |
-| `id-token: write` | Only when `attest: true` |
-| `attestations: write` | Only when `attest: true` |
+| Permission | Level | When required |
+|:-----------|:------|:-------------|
+| `contents` | `read` | Always required for `actions/checkout` |
+| `contents` | `write` | Only when `stage-poggit: true` |
+| `id-token` | `write` | Only when `attest: true` |
+| `attestations` | `write` | Only when `attest: true` |
 
 The [usage examples](#usage) above already reflect the correct permissions for each case.
 
