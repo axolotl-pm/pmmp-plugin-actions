@@ -149,12 +149,11 @@ Set up PHP, build and compress a PocketMine-MP plugin phar, upload it as a workf
 | Name | Required | Default | Description |
 |:-----|:--------:|:--------|:------------|
 | `php-version` | YES | — | Any version available in [`pmmp/PHP-Binaries`](https://github.com/pmmp/PHP-Binaries) (e.g. `8.2`, `8.3`) |
+| `composer` | NO | `true` | Whether to run `composer install` and include dependencies in the phar. Set to `false` if your plugin has no `composer.json`. |
 | `attest` | NO | `false` | Generate a SLSA build provenance attestation for the phar. When `true`, the calling job must grant `id-token: write` and `attestations: write` (see [Permissions](#permissions) below). |
 | `retention-days` | NO | `1` | Days to retain the uploaded artifact |
 | `artifact-name` | NO | `<plugin-name>-phar` | Artifact name override. Useful in matrix builds to avoid collisions. |
 | `plugin-dir` | NO | `${{ github.workspace }}` | Directory containing `plugin.yml` and `composer.json` |
-| `composer` | NO | `true` | Whether pharynx should include composer dependencies |
-| `composer-version` | NO | `2.5.5` | Composer version to use |
 | `pharynx-version` | NO | `latest` | Pharynx version to use |
 | `additional-sources` | NO | — | Additional source directories, colon-separated, absolute or relative to workspace |
 | `additional-assets` | NO | — | Additional assets to include (one pathspec per line, works like `git add`) |

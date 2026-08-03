@@ -7,6 +7,11 @@ on:
         description: 'PHP version to set up'
         required: true
         type: string
+      composer:
+        description: 'Whether to run composer install and include dependencies in the phar. Requires a composer.json in plugin-dir.'
+        required: false
+        default: 'true'
+        type: string
       attest:
         description: 'Whether to generate a SLSA build provenance attestation for the phar'
         required: false
@@ -28,16 +33,6 @@ on:
         description: 'Directory containing plugin.yml and composer.json'
         required: false
         default: ''
-        type: string
-      composer:
-        description: 'Whether pharynx should include composer dependencies'
-        required: false
-        default: 'true'
-        type: string
-      composer-version:
-        description: 'Composer version to use'
-        required: false
-        default: '2.5.5'
         type: string
       pharynx-version:
         description: 'Pharynx version to use'
@@ -116,6 +111,7 @@ jobs:
           echo "ARTIFACT_NAME=$ARTIFACT_NAME"   >> $GITHUB_OUTPUT
 
       - name: 'Install Composer dependencies'
+        if: inputs.composer == 'true'
         shell: 'bash'
         run: 'composer install --no-dev --prefer-dist --no-interaction --classmap-authoritative --ignore-platform-reqs'
 
@@ -124,7 +120,6 @@ jobs:
         with:
           plugin-dir:         '${{ inputs.plugin-dir || github.workspace }}'
           composer:           '${{ inputs.composer }}'
-          composer-version:   '${{ inputs.composer-version }}'
           pharynx-version:    '${{ inputs.pharynx-version }}'
           additional-sources: '${{ inputs.additional-sources }}'
           additional-assets:  '${{ inputs.additional-assets }}'
