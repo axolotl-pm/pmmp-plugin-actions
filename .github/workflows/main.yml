@@ -1,0 +1,13 @@
+name: 'CI'
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  yaml-linter:
+    uses: './.github/workflows/yaml-linter.yml'
+
+  build-phar-test:
+    uses: './.github/workflows/build-phar-test.yml'

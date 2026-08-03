@@ -1,0 +1,4 @@
+[submodule "tests/plugins/AntiInstaBreak"]
+	path = tests/plugins/AntiInstaBreak
+	url = https://github.com/pmmp/AntiInstaBreak
+	branch = stable

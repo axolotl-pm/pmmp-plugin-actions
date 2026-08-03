@@ -1,0 +1,23 @@
+name: 'YAML Linter'
+
+on:
+  workflow_call:
+
+jobs:
+  yamllint:
+    name: 'Lint action.yml files'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'actions/checkout@v4'
+
+      - name: 'Install yamllint'
+        run: 'pip install yamllint'
+
+      - name: 'Lint all action.yml files'
+        run: |
+          shopt -s globstar
+          exit_code=0
+          for f in **/*.yml; do
+            yamllint "$f" || exit_code=$?
+          done
+          exit $exit_code

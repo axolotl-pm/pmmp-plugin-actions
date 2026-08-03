@@ -1,0 +1,44 @@
+name: 'Build PHAR test'
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    uses: './.github/workflows/build-phar.yml'
+    with:
+      php-version: '8.2'
+      plugin-dir: 'tests/plugins/AntiInstaBreak'
+      composer: false
+    permissions:
+      contents: 'read'
+
+  verify:
+    needs: 'build'
+    runs-on: 'ubuntu-latest'
+
+    steps:
+      - name: 'Download phar'
+        id: 'download'
+        uses: 'actions/download-artifact@v8'
+        with:
+          artifact-ids: '${{ needs.build.outputs.artifact-id }}'
+          path: '${{ runner.temp }}'
+
+      - name: 'Verify phar'
+        shell: 'bash'
+        env:
+          PHAR_PATH: '${{ steps.download.outputs.download-path }}/${{ needs.build.outputs.plugin-name }}.phar'
+        run: |
+          php -dphar.readonly=0 -r "
+            \$phar = new Phar('$PHAR_PATH');
+            \$files = array_keys(iterator_to_array(\$phar));
+
+            \$hasPluginYml = in_array('phar://$PHAR_PATH/plugin.yml', \$files, true);
+            \$hasSrc = (bool) array_filter(\$files, fn(\$f) => str_starts_with(\$f, 'phar://$PHAR_PATH/src/'));
+
+            if (!\$hasPluginYml) { fwrite(STDERR, 'Missing plugin.yml in phar' . PHP_EOL); exit(1); }
+            if (!\$hasSrc)       { fwrite(STDERR, 'Missing src/ in phar' . PHP_EOL); exit(1); }
+
+            echo 'OK: plugin.yml and src/ present (' . count(\$files) . ' files)' . PHP_EOL;
+          "

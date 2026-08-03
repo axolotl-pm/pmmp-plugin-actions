@@ -84,6 +84,8 @@ jobs:
 
     steps:
       - uses: 'actions/checkout@v4'
+        with:
+          submodules: true
 
       - name: 'Set up PHP'
         uses: 'pmmp/setup-php-action@3.2.0'
