@@ -39,6 +39,11 @@ on:
         required: false
         default: '2.5.5'
         type: string
+      pharynx-version:
+        description: 'Pharynx version to use'
+        required: false
+        default: 'latest'
+        type: string
       additional-sources:
         description: 'Additional source directories, colon-separated, absolute or relative to workspace'
         required: false
@@ -66,7 +71,7 @@ on:
         description: 'PocketMine-MP API version(s) from plugin.yml'
         value: '${{ jobs.build.outputs.pm-version }}'
       artifact-name:
-        description: 'Name of the uploaded artifact (use with actions/download-artifact)'
+        description: 'Name of the uploaded artifact'
         value: '${{ jobs.build.outputs.artifact-name }}'
       artifact-id:
         description: 'ID of the uploaded artifact for immutable download'
@@ -124,9 +129,10 @@ jobs:
       - uses: 'SOF3/pharynx@v0.2'
         id: 'pharynx'
         with:
-          plugin-dir:         '${{ inputs.plugin-dir }}'
+          plugin-dir:         '${{ inputs.plugin-dir || github.workspace }}'
           composer:           '${{ inputs.composer }}'
           composer-version:   '${{ inputs.composer-version }}'
+          pharynx-version:    '${{ inputs.pharynx-version }}'
           additional-sources: '${{ inputs.additional-sources }}'
           additional-assets:  '${{ inputs.additional-assets }}'
           stage-poggit:       '${{ inputs.stage-poggit }}'

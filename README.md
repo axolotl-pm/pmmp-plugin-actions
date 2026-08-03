@@ -95,9 +95,9 @@ jobs:
     steps:
       - uses: axolotl-pm/pmmp-plugin-actions/publish-release@v1.0.0
         with:
-          artifact-id:   ${{ needs.build.outputs.artifact-id }}
-          plugin-name:   ${{ needs.build.outputs.plugin-name }}
-          pm-version:    ${{ needs.build.outputs.pm-version }}
+          artifact-id: ${{ needs.build.outputs.artifact-id }}
+          plugin-name: ${{ needs.build.outputs.plugin-name }}
+          pm-version:  ${{ needs.build.outputs.pm-version }}
 ```
 
 ### Verifying attestations
@@ -155,6 +155,7 @@ Set up PHP, build and compress a PocketMine-MP plugin phar, upload it as a workf
 | `plugin-dir` | NO | `${{ github.workspace }}` | Directory containing `plugin.yml` and `composer.json` |
 | `composer` | NO | `true` | Whether pharynx should include composer dependencies |
 | `composer-version` | NO | `2.5.5` | Composer version to use |
+| `pharynx-version` | NO | `latest` | Pharynx version to use |
 | `additional-sources` | NO | — | Additional source directories, colon-separated, absolute or relative to workspace |
 | `additional-assets` | NO | — | Additional assets to include (one pathspec per line, works like `git add`) |
 | `stage-poggit` | NO | `false` | Whether to stage the build on Poggit CI |
