@@ -83,7 +83,7 @@ jobs:
       artifact-id:    '${{ steps.upload.outputs.artifact-id }}'
 
     steps:
-      - uses: 'actions/checkout@v4'
+      - uses: 'actions/checkout@v7'
         with:
           submodules: true
 
