@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/axolotl-pm/pmmp-plugin-actions/actions"><img alt="pmmp-plugin-actions status" src="https://github.com/axolotl-pm/pmmp-plugin-actions/workflows/main/badge.svg"></a>
+  <a href="https://github.com/axolotl-pm/pmmp-plugin-actions/actions"><img alt="pmmp-plugin-actions status" src="https://github.com/axolotl-pm/pmmp-plugin-actions/actions/workflows/main.yml/badge.svg"></a>
 </p>
 
 # pmmp-plugin-actions

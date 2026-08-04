@@ -32,10 +32,10 @@ jobs:
         run: |
           php -dphar.readonly=0 -r "
             \$phar = new Phar('$PHAR_PATH');
-            \$files = array_keys(iterator_to_array(\$phar));
+            \$files = array_flip(array_map(fn(\$f) => str_replace('phar://$PHAR_PATH/', '', \$f), array_keys(iterator_to_array(new RecursiveIteratorIterator(\$phar)))));
 
-            \$hasPluginYml = in_array('phar://$PHAR_PATH/plugin.yml', \$files, true);
-            \$hasSrc = (bool) array_filter(\$files, fn(\$f) => str_starts_with(\$f, 'phar://$PHAR_PATH/src/'));
+            \$hasPluginYml = isset(\$files['plugin.yml']);
+            \$hasSrc = (bool) array_filter(array_keys(\$files), fn(\$f) => str_starts_with(\$f, 'src/'));
 
             if (!\$hasPluginYml) { fwrite(STDERR, 'Missing plugin.yml in phar' . PHP_EOL); exit(1); }
             if (!\$hasSrc)       { fwrite(STDERR, 'Missing src/ in phar' . PHP_EOL); exit(1); }
