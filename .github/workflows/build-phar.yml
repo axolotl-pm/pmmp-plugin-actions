@@ -149,7 +149,7 @@ jobs:
 
       - name: 'Upload phar artifact'
         id: 'upload'
-        uses: 'actions/upload-artifact@v4'
+        uses: 'actions/upload-artifact@v7'
         with:
           name: '${{ steps.plugin-info.outputs.ARTIFACT_NAME }}'
           path: '${{ runner.temp }}/${{ steps.plugin-info.outputs.PLUGIN_NAME }}.phar'
